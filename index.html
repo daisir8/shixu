@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>时序 · 时间规划与倒计时</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="wallpaper" aria-hidden="true"></div>
+
+<div class="orbs" aria-hidden="true">
+  <span class="orb orb-a"></span>
+  <span class="orb orb-b"></span>
+  <span class="orb orb-c"></span>
+  <span class="orb orb-d"></span>
+</div>
+
+<div class="app">
+
+  <!-- ============ 顶部：倒计时英雄区 ============ -->
+  <section class="hero">
+    <div class="hero-card glass">
+      <div class="hero-top">
+        <span class="live"><i></i>下一个节点</span>
+        <div class="hero-nav">
+          <button class="hb" id="cdPrev" aria-label="上一个">‹</button>
+          <div class="cd-dots" id="cdDots"></div>
+          <button class="hb" id="cdNext" aria-label="下一个">›</button>
+        </div>
+      </div>
+
+      <div class="hero-main">
+        <div class="hero-text">
+          <h1 id="cdTitle">还没有倒计时节点</h1>
+          <p id="cdDate">点击右下角「新建倒计时」设置一个重要时刻</p>
+
+          <div class="cd-grid" id="cdGrid">
+            <div class="cd-unit"><b id="cdD">--</b><span>天</span></div>
+            <div class="cd-sep">:</div>
+            <div class="cd-unit"><b id="cdH">--</b><span>时</span></div>
+            <div class="cd-sep">:</div>
+            <div class="cd-unit"><b id="cdM">--</b><span>分</span></div>
+            <div class="cd-sep">:</div>
+            <div class="cd-unit sec"><b id="cdS">--</b><span>秒</span></div>
+          </div>
+
+          <div class="hero-bar">
+            <div class="bar"><i id="cdBar"></i></div>
+            <span id="cdPct">已推进 0%</span>
+          </div>
+          <p class="cd-from" id="cdFrom"></p>
+        </div>
+
+        <div class="hero-ring">
+          <svg viewBox="0 0 120 120" class="ring">
+            <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-fg" id="cdRing" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-in">
+            <b id="cdRingN">--</b>
+            <span id="cdRingU">天</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-foot">
+        <button class="btn ghost" id="cdManage">管理节点</button>
+        <button class="btn primary" id="cdAdd">＋ 新建倒计时</button>
+        <span class="past-tip" id="cdPast"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 每日一句 ============ -->
+  <section class="quote glass" id="quoteCard" title="点击编辑这句话">
+    <span class="q-mark">&#8221;</span>
+    <div class="q-main">
+      <p id="qText">还没有写句子，点这里添加一句</p>
+      <div class="q-foot">
+        <span id="qMeta">每日一句</span>
+        <div class="q-nav">
+          <button class="hb" id="qPrev" aria-label="上一句">‹</button>
+          <button class="hb" id="qNext" aria-label="下一句">›</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 工具条 ============ -->
+  <div class="toolbar glass">
+    <div class="seg" id="viewSeg">
+      <span class="seg-thumb"></span>
+      <button class="seg-item active" data-view="timeline">时间轴</button>
+      <button class="seg-item" data-view="gantt">甘特图</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <label class="switch" title="高亮关键链路">
+      <input type="checkbox" id="criticalToggle">
+      <span class="sw"></span>
+      <em>关键链</em>
+    </label>
+
+    <div class="search glass-2">
+      <svg viewBox="0 0 24 24" class="ic"><path d="M10 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm11 17-5.2-5.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="search" type="text" placeholder="搜索事件">
+    </div>
+
+    <div class="seg sm" id="filterSeg">
+      <span class="seg-thumb"></span>
+      <button class="seg-item active" data-filter="all">全部</button>
+      <button class="seg-item" data-filter="todo">待办</button>
+      <button class="seg-item" data-filter="doing">进行</button>
+      <button class="seg-item" data-filter="done">完成</button>
+    </div>
+
+    <button class="btn primary round" id="addTask">＋ 新建事件</button>
+  </div>
+
+  <!-- ============ 统计 ============ -->
+  <div class="stats" id="stats"></div>
+
+  <!-- ============ 主视图 ============ -->
+  <main>
+    <!-- 时间轴 -->
+    <section id="view-timeline" class="view active">
+      <div class="tl-wrap" id="tlWrap">
+        <svg class="dep-layer" id="depLayer"></svg>
+        <div id="tlBody"></div>
+      </div>
+    </section>
+
+    <!-- 甘特 -->
+    <section id="view-gantt" class="view">
+      <div class="gantt glass">
+        <div class="gantt-scroll" id="ganttScroll">
+          <div class="gantt-inner" id="ganttInner">
+            <svg class="gantt-layer" id="ganttLayer"></svg>
+            <div id="ganttBody"></div>
+            <svg class="gantt-hit-layer" id="ganttHitLayer"></svg>
+          </div>
+        </div>
+      </div>
+      <p class="hint">
+        <b>直接上手改：</b>拖动色条整体平移 · 拖左右两端改开始/结束时间（吸附 15 分钟）· 拖色条两侧的小圆点到另一个色条上即可建立前置关系（再连一次解除）· 点击箭头可解除依赖。
+        橙色虚线 = 前置时间晚于后继，顺序冲突。
+      </p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>数据保存在本机浏览器 · </span>
+    <button class="link" id="expBtn">导出 JSON</button>
+    <span> · </span>
+    <button class="link" id="impBtn">导入</button>
+    <input type="file" id="impFile" accept="application/json" hidden>
+    <span> · </span>
+    <button class="link danger" id="clearBtn">清空全部数据</button>
+    <span> · </span>
+    <button class="link danger" id="resetBtn">清空并载入示例</button>
+  </footer>
+</div>
+
+<!-- ============ 事件编辑 Sheet ============ -->
+<div class="mask" id="mask"></div>
+
+<div class="sheet" id="taskSheet" role="dialog" aria-modal="true">
+  <div class="grabber"></div>
+  <div class="sheet-head">
+    <button class="link" id="tsCancel">取消</button>
+    <h2 id="tsTitle">新建事件</h2>
+    <button class="link strong" id="tsSave">保存</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label>事件名称</label>
+      <input id="fTitle" type="text" placeholder="例如：完成原型设计 v1" maxlength="60">
+      <p class="tiny">填好名称后按回车即可保存；时间、状态等细节可稍后展开设置。</p>
+    </div>
+
+    <button class="disclosure" id="fToggle" aria-expanded="false" aria-controls="fMore">
+      <span class="d-caret">›</span>
+      <span class="d-label">时间 / 状态 / 前置等详细设置</span>
+      <span class="d-sum" id="fSum"></span>
+    </button>
+
+    <div class="more" id="fMore">
+    <div class="field">
+      <label>时间</label>
+      <div class="row2">
+        <input id="fStart" type="datetime-local">
+        <input id="fEnd" type="datetime-local">
+      </div>
+      <div class="quick" id="fQuick">
+        <button data-d="0">今天</button>
+        <button data-d="1">明天</button>
+        <button data-d="2">后天</button>
+        <button data-d="7">一周后</button>
+        <button data-dur="60">时长 1h</button>
+        <button data-dur="120">2h</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>状态</label>
+      <div class="seg full" id="fStatus">
+        <span class="seg-thumb"></span>
+        <button class="seg-item active" data-v="todo">待办</button>
+        <button class="seg-item" data-v="doing">进行中</button>
+        <button class="seg-item" data-v="done">已完成</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>优先级</label>
+      <div class="seg full" id="fPrio">
+        <span class="seg-thumb"></span>
+        <button class="seg-item active" data-v="normal">普通</button>
+        <button class="seg-item" data-v="high">重要</button>
+        <button class="seg-item" data-v="low">次要</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>标记色</label>
+      <div class="swatches" id="fColor"></div>
+    </div>
+
+    <div class="field">
+      <label>前置事件（必须先完成的）</label>
+      <div class="dep-picker" id="fDeps"></div>
+      <p class="tiny">选中后会在此事件与前置事件之间画出导向箭头。</p>
+    </div>
+
+    <div class="field">
+      <label>备注</label>
+      <textarea id="fNote" rows="3" placeholder="补充说明、交付物、验收标准…"></textarea>
+    </div>
+    </div>
+
+    <button class="btn danger block" id="tsDelete" hidden>删除此事件</button>
+  </div>
+</div>
+
+<!-- ============ 倒计时编辑 Sheet ============ -->
+<div class="sheet" id="cdSheet" role="dialog" aria-modal="true">
+  <div class="grabber"></div>
+  <div class="sheet-head">
+    <button class="link" id="csCancel">取消</button>
+    <h2 id="csTitle">新建倒计时</h2>
+    <button class="link strong" id="csSave">保存</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label>节点名称</label>
+      <input id="cTitle" type="text" placeholder="例如：项目交付" maxlength="40">
+      <p class="tiny">填好名称后按回车即可保存；默认先按「一周后 18:00」排，可展开改具体时刻。</p>
+    </div>
+
+    <button class="disclosure" id="cToggle" aria-expanded="false" aria-controls="cMore">
+      <span class="d-caret">›</span>
+      <span class="d-label">目标时刻 / 参照起点 / 颜色</span>
+      <span class="d-sum" id="cSum"></span>
+    </button>
+
+    <div class="more" id="cMore">
+      <div class="field">
+        <label>目标时刻</label>
+        <input id="cTarget" type="datetime-local">
+        <div class="quick">
+          <button data-cd="1">+1 天</button>
+          <button data-cd="7">+7 天</button>
+          <button data-cd="30">+30 天</button>
+          <button data-cd="90">+90 天</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>进度条的起点（可选）</label>
+        <input id="cFrom" type="datetime-local">
+        <p class="tiny">百分比 = 从「起点」到「目标时刻」这段时间里已经过去的比例，默认从你创建这个节点时算起。</p>
+      </div>
+      <div class="field">
+        <label>标记色</label>
+        <div class="swatches" id="cColor"></div>
+      </div>
+    </div>
+
+    <div class="cd-list" id="cdList"></div>
+    <button class="btn danger block" id="csDelete" hidden>删除此节点</button>
+  </div>
+</div>
+
+<!-- ============ 每日一句 Sheet ============ -->
+<div class="sheet" id="quoteSheet" role="dialog" aria-modal="true">
+  <div class="grabber"></div>
+  <div class="sheet-head">
+    <button class="link" id="qsCancel">取消</button>
+    <h2>每日一句</h2>
+    <button class="link strong" id="qsSave">保存</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label>当前这句话</label>
+      <textarea id="qInput" rows="3" maxlength="200" placeholder="写一句想对自己说的话…"></textarea>
+    </div>
+    <div class="quick">
+      <button id="qAdd">＋ 新增一句</button>
+      <button id="qUse">设为今日</button>
+    </div>
+    <div class="cd-list" id="qList"></div>
+    <button class="btn danger block" id="qDelete">删除这句</button>
+    <p class="tiny">写多句后，每天会自动按顺序换一句；也可以随时用 ‹ › 手动切换。</p>
+  </div>
+</div>
+
+<!-- ============ 确认 Sheet ============ -->
+<div class="sheet tiny-sheet" id="confirmSheet" role="dialog" aria-modal="true">
+  <div class="grabber"></div>
+  <div class="confirm-box">
+    <h3 id="cfTitle">确认删除？</h3>
+    <p id="cfDesc">删除后无法恢复。</p>
+    <div class="confirm-btns">
+      <button class="btn ghost" id="cfNo">取消</button>
+      <button class="btn danger" id="cfYes">删除</button>
+    </div>
+  </div>
+</div>
+
+<div class="drag-tip" id="dragTip"></div>
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
